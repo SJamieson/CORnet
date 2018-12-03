@@ -62,9 +62,8 @@ class CORblock_R(nn.Module):
         x = self.norm1(x)
         x = self.nonlin1(x)
 
-        state = self.output(x)
-        output = state
-        return output, state
+        output = self.output(x)
+        return output
 
 
 class CORnet_R(nn.Module):
@@ -83,6 +82,14 @@ class CORnet_R(nn.Module):
             ('linear', nn.Linear(512, 1000))
         ]))
 
+        self.input_size = [3, 224, 224]
+        self.input_space = 'rgb'
+        self.input_range = None
+        self.mean = [0.485, 0.456, 0.406]
+        self.std = [0.229, 0.224, 0.225]
+        self.features = self.IT
+        self.logits = self.decoder
+
     def forward(self, inp):
         outputs = {'inp': inp}
         states = {}
@@ -93,18 +100,18 @@ class CORnet_R(nn.Module):
                 inp = outputs['inp']
             else:  # at t=0 there is no input yet to V2 and up
                 inp = None
-            new_output, new_state = getattr(self, block)(inp, batch_size=outputs['inp'].shape[0])
+            new_output = getattr(self, block)(inp, batch_size=outputs['inp'].shape[0])
             outputs[block] = new_output
-            states[block] = new_state
+            states[block] = new_output
 
         for t in range(1, self.times):
             for block in blocks[1:]:
                 prev_block = blocks[blocks.index(block) - 1]
                 prev_output = outputs[prev_block]
                 prev_state = states[block]
-                new_output, new_state = getattr(self, block)(prev_output, prev_state)
+                new_output = getattr(self, block)(prev_output, prev_state)
                 outputs[block] = new_output
-                states[block] = new_state
+                states[block] = new_output
 
         out = self.decoder(outputs['IT'])
         return out
