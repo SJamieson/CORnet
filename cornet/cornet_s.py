@@ -114,8 +114,8 @@ def CORnet_S():
     model.input_range = None
     model.mean = [0.485, 0.456, 0.406]
     model.std = [0.229, 0.224, 0.225]
-    model.features = model._modules.get('IT')
-    model.logits = model._modules.get('decoder')
+    model.features = lambda: model._modules.get('IT')
+    model.logits = lambda: model._modules.get('decoder')
 
     # weight initialization
     for m in model.modules():
